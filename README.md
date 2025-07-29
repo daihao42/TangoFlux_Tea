@@ -1,3 +1,5 @@
+🔥🔥If you enjoyed TangoFlux, please check out our latest innovation, Jam, a lyrics-to-song generator: https://github.com/declare-lab/jamify
+
 <div align="center">
   <img src="assets/tf_opener.png" alt="TangoFluxOpener" width="1000" />
 
