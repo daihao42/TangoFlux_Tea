@@ -240,9 +240,12 @@ class TangoFlux(nn.Module):
         negative_prompt_embeds = negative_prompt_embeds.repeat_interleave(
             num_samples_per_prompt, 0
         )
+        negative_prompt_embeds = torch.cat([negative_prompt_embeds] * len(prompt))
+
         uncond_attention_mask = uncond_attention_mask.repeat_interleave(
             num_samples_per_prompt, 0
         )
+        uncond_attention_mask = torch.cat([uncond_attention_mask] * len(prompt))
 
         # For classifier free guidance, we need to do two forward passes.
         # We concatenate the unconditional and text embeddings into a single batch to avoid doing two forward passes
@@ -436,8 +439,7 @@ class TangoFlux(nn.Module):
         classifier_free_guidance = guidance_scale > 1.0
         duration_hidden_states = self.encode_duration(duration)
         if classifier_free_guidance:
-            #bsz = 2 * num_samples_per_prompt * prompt_batch
-            bsz = (1 + prompt_batch) * num_samples_per_prompt
+            bsz = 2 * num_samples_per_prompt * prompt_batch
 
             encoder_hidden_states, boolean_encoder_mask = (
                 self.encode_text_classifier_free(
