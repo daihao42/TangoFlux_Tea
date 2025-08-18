@@ -71,6 +71,7 @@ class TangoFluxInference:
                 num_inference_steps=steps,
                 guidance_scale=guidance_scale,
                 init_latents=x0,
+                num_samples_per_prompt=num_samples_per_prompt,
             )
 
         x1 = latents.transpose(2, 1)
