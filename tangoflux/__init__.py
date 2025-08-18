@@ -73,6 +73,6 @@ class TangoFluxInference:
                 init_latents=x0,
             )
 
-        x1 = latents.transpose(2, 1)
+        x1 = latents
 
         return x0[:, :latent_length, :], x1[:, :latent_length, :]
