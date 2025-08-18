@@ -84,7 +84,7 @@ class TangoFluxInference:
 
         if isinstance(prompt, str):
             prompt = [prompt]
-        x0 = torch.randn(num_samples_per_prompt * len(prompt), 645, 64)
+        x0 = torch.randn(num_samples_per_prompt * len(prompt), 645, 64).cuda()
 
         with torch.no_grad():
             latents = self.model.inference_flow_batch(
