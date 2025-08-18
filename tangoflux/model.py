@@ -399,6 +399,132 @@ class TangoFlux(nn.Module):
 
         return latents
 
+    @torch.no_grad()
+    def inference_flow_batch(
+        self,
+        prompt,
+        num_inference_steps=50,
+        timesteps=None,
+        guidance_scale=3,
+        duration=10,
+        seed=0,
+        disable_progress=False,
+        num_samples_per_prompt=1,
+        callback_on_step_end=None,
+        init_latents=None,
+    ):
+        """Only tested for single inference. Haven't test for batch inference"""
+        
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+
+        bsz = num_samples_per_prompt
+        device = self.transformer.device
+        scheduler = self.noise_scheduler
+
+        if not isinstance(prompt, list):
+            prompt = [prompt]
+            prompt_batch = 1
+        else:
+            prompt_batch = len(prompt)
+
+        if not isinstance(duration, torch.Tensor):
+            duration = torch.tensor([duration], device=device)
+        classifier_free_guidance = guidance_scale > 1.0
+        duration_hidden_states = self.encode_duration(duration)
+        if classifier_free_guidance:
+            #bsz = 2 * num_samples_per_prompt * prompt_batch
+            bsz = (1 + prompt_batch) * num_samples_per_prompt
+
+            encoder_hidden_states, boolean_encoder_mask = (
+                self.encode_text_classifier_free(
+                    prompt, num_samples_per_prompt=num_samples_per_prompt
+                )
+            )
+            duration_hidden_states = duration_hidden_states.repeat(bsz, 1, 1)
+
+        else:
+
+            encoder_hidden_states, boolean_encoder_mask = self.encode_text(
+                prompt, num_samples_per_prompt=num_samples_per_prompt
+            )
+
+        mask_expanded = boolean_encoder_mask.unsqueeze(-1).expand_as(
+            encoder_hidden_states
+        )
+        masked_data = torch.where(
+            mask_expanded, encoder_hidden_states, torch.tensor(float("nan"))
+        )
+
+        pooled = torch.nanmean(masked_data, dim=1)
+        pooled_projection = self.fc(pooled)
+
+        encoder_hidden_states = torch.cat(
+            [encoder_hidden_states, duration_hidden_states], dim=1
+        )  ## (bs,seq_len,dim)
+
+        sigmas = np.linspace(1.0, 1 / num_inference_steps, num_inference_steps)
+        timesteps, num_inference_steps = retrieve_timesteps(
+            scheduler, num_inference_steps, device, timesteps, sigmas
+        )
+
+        if init_latents is None:
+            latents = torch.randn(num_samples_per_prompt * prompt_batch, self.audio_seq_len, 64)
+        else:
+            latents = init_latents
+        weight_dtype = latents.dtype
+
+        progress_bar = tqdm(range(num_inference_steps), disable=disable_progress)
+
+        txt_ids = torch.zeros(bsz, encoder_hidden_states.shape[1], 3).to(device)
+        audio_ids = (
+            torch.arange(self.audio_seq_len)
+            .unsqueeze(0)
+            .unsqueeze(-1)
+            .repeat(bsz, 1, 3)
+            .to(device)
+        )
+
+        timesteps = timesteps.to(device)
+        latents = latents.to(device)
+        encoder_hidden_states = encoder_hidden_states.to(device)
+
+        for i, t in enumerate(timesteps):
+
+            latents_input = (
+                torch.cat([latents] * 2) if classifier_free_guidance else latents
+            )
+
+            noise_pred = self.transformer(
+                hidden_states=latents_input,
+                # YiYi notes: divide it by 1000 for now because we scale it by 1000 in the transforme rmodel (we should not keep it but I want to keep the inputs same for the model for testing)
+                timestep=torch.tensor([t / 1000], device=device),
+                guidance=None,
+                pooled_projections=pooled_projection,
+                encoder_hidden_states=encoder_hidden_states,
+                txt_ids=txt_ids,
+                img_ids=audio_ids,
+                return_dict=False,
+            )[0]
+
+            if classifier_free_guidance:
+                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                noise_pred = noise_pred_uncond + guidance_scale * (
+                    noise_pred_text - noise_pred_uncond
+                )
+
+            latents = scheduler.step(noise_pred, t, latents).prev_sample
+
+            progress_bar.update(1)
+
+            if callback_on_step_end is not None:
+                callback_on_step_end()
+
+        return latents
+
     def forward(self, latents, prompt, duration=torch.tensor([10]), sft=True):
 
         device = latents.device

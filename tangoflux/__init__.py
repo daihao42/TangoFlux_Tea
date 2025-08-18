@@ -78,3 +78,25 @@ class TangoFluxInference:
         x0 = x0.transpose(2, 1)
 
         return x0[:,:, :latent_length], x1[:,:, :latent_length]
+
+
+    def generate_latents_batch(self, prompt, steps=25, duration=10, guidance_scale=4.5, num_samples_per_prompt=1, latent_length=215):
+
+        if isinstance(prompt, str):
+            prompt = [prompt]
+        x0 = torch.randn(num_samples_per_prompt * len(prompt), 645, 64)
+
+        with torch.no_grad():
+            latents = self.model.inference_flow_batch(
+                prompt,
+                duration=duration,
+                num_inference_steps=steps,
+                guidance_scale=guidance_scale,
+                init_latents=x0,
+                num_samples_per_prompt=num_samples_per_prompt,
+            )
+
+        x1 = latents.transpose(2, 1)
+        x0 = x0.transpose(2, 1)
+
+        return x0[:,:, :latent_length], x1[:,:, :latent_length]
