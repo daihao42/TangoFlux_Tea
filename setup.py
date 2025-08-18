@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="tangoflux",
     description="TangoFlux: Super Fast and Faithful Text to Audio Generation with Flow Matching",
-    version="0.1.8",
+    version="0.1.9",
     packages=["tangoflux"],
     install_requires=[
         "torch==2.4.0",

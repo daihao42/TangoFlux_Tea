@@ -61,7 +61,7 @@ class TangoFluxInference:
 
     def generate_latents(self, prompt, steps=25, duration=10, guidance_scale=4.5, num_samples_per_prompt=1, latent_length=215):
 
-        x0 = torch.randn(num_samples_per_prompt, 645, 64)
+        x0 = torch.randn(num_samples_per_prompt, 645, 64).cuda()
 
 
         with torch.no_grad():
