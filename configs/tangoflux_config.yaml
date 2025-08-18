@@ -25,7 +25,7 @@ model:
   attention_head_dim: 128
   joint_attention_dim: 1024
   num_attention_heads: 8
-  audio_seq_len: 215
+  audio_seq_len: 645
   max_duration: 30
   uncondition: false
   text_encoder_name: "google/flan-t5-large"
