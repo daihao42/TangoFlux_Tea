@@ -58,3 +58,19 @@ class TangoFluxInference:
         waveform_end = int(duration * self.vae.config.sampling_rate)
         wave = wave[:, :waveform_end]
         return wave
+
+    def generate_latents(self, prompt, steps=25, duration=10, guidance_scale=4.5, num_samples_per_prompt=1, latent_length=215):
+
+        x0 = torch.randn(num_samples_per_prompt, latent_length, 64)
+
+
+        with torch.no_grad():
+            latents = self.model.inference_flow(
+                prompt,
+                duration=duration,
+                num_inference_steps=steps,
+                guidance_scale=guidance_scale,
+                init_latents=x0,
+            )
+
+        return x0, latents

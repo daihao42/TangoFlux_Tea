@@ -290,6 +290,7 @@ class TangoFlux(nn.Module):
         disable_progress=False,
         num_samples_per_prompt=1,
         callback_on_step_end=None,
+        init_latents=None,
     ):
         """Only tested for single inference. Haven't test for batch inference"""
         
@@ -344,7 +345,10 @@ class TangoFlux(nn.Module):
             scheduler, num_inference_steps, device, timesteps, sigmas
         )
 
-        latents = torch.randn(num_samples_per_prompt, self.audio_seq_len, 64)
+        if init_latents is None:
+            latents = torch.randn(num_samples_per_prompt, self.audio_seq_len, 64)
+        else:
+            latents = init_latents
         weight_dtype = latents.dtype
 
         progress_bar = tqdm(range(num_inference_steps), disable=disable_progress)
