@@ -80,7 +80,7 @@ class TangoFluxInference:
         return x0[:,:, :latent_length], x1[:,:, :latent_length]
 
 
-    def generate_latents_batch(self, prompt, steps=25, duration=10, guidance_scale=4.5, num_samples_per_prompt=1, latent_length=215):
+    def generate_latents_batch(self, prompt, steps=25, duration=10, guidance_scale=4.5, num_samples_per_prompt=1, latent_length=215, disable_progress=True):
 
         if isinstance(prompt, str):
             prompt = [prompt]
@@ -94,6 +94,7 @@ class TangoFluxInference:
                 guidance_scale=guidance_scale,
                 init_latents=x0,
                 num_samples_per_prompt=num_samples_per_prompt,
+                disable_progress=disable_progress,
             )
 
         x1 = latents.transpose(2, 1)
