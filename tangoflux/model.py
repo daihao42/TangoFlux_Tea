@@ -418,11 +418,11 @@ class TangoFlux(nn.Module):
     ):
         """Only tested for single inference. Haven't test for batch inference"""
         
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed(seed)
-            torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
+        #torch.manual_seed(seed)
+        #if torch.cuda.is_available():
+        #    torch.cuda.manual_seed(seed)
+        #    torch.cuda.manual_seed_all(seed)
+        #torch.backends.cudnn.deterministic = True
 
         bsz = num_samples_per_prompt
         device = self.transformer.device
